@@ -21,6 +21,7 @@ def _rmtree(self, ignore_errors=False, onerror=None):
 
 
 PurePath.rmtree = _rmtree
+PurePath.fspath = property(lambda self: str(self))
 
 
 @register_client_class("gs")

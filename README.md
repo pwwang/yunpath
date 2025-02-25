@@ -15,6 +15,7 @@ pip install yunpath
 ## Features
 
 - Add `rmtree` to `pathlib.PurePath` to match the `cloudpathlib.CloudPath` API.
+- Add `fspath` to `pathlib.PurePath` to match the `cloudpathlib.CloudPath` API.
 - Allow to `mkdir` for `GSPath` objects.
 
 [1]: https://github.com/drivendataorg/cloudpathlib

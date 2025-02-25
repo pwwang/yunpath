@@ -1,4 +1,5 @@
 import pytest
+from pathlib import Path
 from yunpath import AnyPath
 from cloudpathlib.exceptions import NoStatError
 from .conftest import uid  # noqa: F401
@@ -80,6 +81,13 @@ def test_stat_dir(gspath):
     """Test that stat() raises NoStatError if the path is a directory"""
     with pytest.raises(NoStatError):
         gspath.stat()
+
+
+def test_fspath(gspath):
+    """Test that fspath() returns the correct path"""
+    path = AnyPath(gspath.fspath)
+    assert isinstance(path, Path)
+    assert str(path) == path.fspath
 
 
 def test_is_file_or_dir(gspath):
