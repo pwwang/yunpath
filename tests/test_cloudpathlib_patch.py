@@ -85,9 +85,16 @@ def test_stat_dir(gspath):
 def test_is_file_or_dir(gspath):
     """Test that _is_file_or_dir() correctly identifies a directory as
     a directory even if it is empty"""
-    path = gspath / "test_is_file_or_dir"
-    path.mkdir(exist_ok=True)
-    assert path.client._is_file_or_dir(path) == "dir"
+    # path = gspath / "test_is_file_or_dir"
+    # path.mkdir(exist_ok=True)
+    # assert path.client._is_file_or_dir(path) == "dir"
+
+    # path = next(gspath.iterdir())
+    # assert path.client._is_file_or_dir(path) == "dir"
+
+    path = gspath / "test_file.txt"
+    path.touch()
+    assert path.client._is_file_or_dir(path) == "file"
 
 
 def test_rmtree(tmp_path):

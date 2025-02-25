@@ -29,7 +29,7 @@ class GSClient(_GSClient):
     def _is_file_or_dir(self, cloud_path: _GSPath) -> str | None:
         """Check if a path is a file or a directory"""
         out = super()._is_file_or_dir(cloud_path)
-        if out is not None:
+        if out is not None and out != "file":
             return out
 
         prefix = cloud_path.blob.rstrip("/") + "/"
@@ -37,7 +37,7 @@ class GSClient(_GSClient):
         if placeholder_blob is not None:  # pragma: no cover
             return "dir"
 
-        return None
+        return out
 
 
 @register_path_class("gs")
