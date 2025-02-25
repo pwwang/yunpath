@@ -1,0 +1,41 @@
+[tool.poetry]
+name = "yunpath"
+version = "0.0.0"
+description = "Monkey patch cloudpathlib to fix issues or add features"
+authors = ["pwwang <pwwang@pwwang.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+cloudpathlib = "^0.20.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.4"
+pytest-cov = "^6.0.0"
+python-dotenv = "^1.0.1"
+google-cloud-storage = "^3.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+addopts = "-vv --cov=yunpath --cov-report xml:.coverage.xml --cov-report term-missing"
+filterwarnings = [
+    # "error"
+]
+console_output_style = "progress"
+junit_family = "xunit1"
+
+[tool.mypy]
+ignore_missing_imports = true
+allow_redefinition = true
+disable_error_code = ["attr-defined", "no-redef"]
+show_error_codes = true
+strict_optional = false
+
+[tool.black]
+line-length = 88
+target-version = ['py39', 'py310', 'py311', 'py312']
+include = '\.pyi?$'
