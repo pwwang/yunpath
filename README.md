@@ -12,22 +12,9 @@ This library is a wrapper around the [`cloudpathlib`][1] library.
 pip install yunpath
 ```
 
-## Usage
+## Features
 
-```python
-from yunpath import YPath
-
-path = YPath("/local/path")
-
-path.is_local # True
-path.is_cloud # False
-
-path = YPath("gs://bucket/path")
-
-path.is_local # False
-path.is_cloud # True
-
-# Then use the APIs like pathlib.Path
-```
+- Add `rmtree` to `pathlib.PurePath` to match the `cloudpathlib.CloudPath` API.
+- Allow to `mkdir` for `GSPath` objects.
 
 [1]: https://github.com/drivendataorg/cloudpathlib

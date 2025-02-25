@@ -24,7 +24,7 @@ jobs:
           python -m pip install poetry
           poetry config virtualenvs.create false
           python -m pip install flake8
-          poetry install -v
+          poetry install -v --with dev
           poetry show
       - name: Run flake8
         run: flake8 yunpath

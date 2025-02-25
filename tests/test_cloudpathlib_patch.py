@@ -1,12 +1,13 @@
 import pytest
-from yunpath.patch import GSPath, NoStatError
+from yunpath import AnyPath
+from cloudpathlib.exceptions import NoStatError
 from .conftest import uid  # noqa: F401
 
 
 @pytest.fixture(scope="module")
 def gspath(uid):  # noqa: F811
-    """Return a GSPath object"""
-    p = GSPath(
+    """Return a AnyPath object"""
+    p = AnyPath(
         f"gs://handy-buffer-287000.appspot.com/yunpath-test/test-{uid}"
     )
     p.mkdir(exist_ok=True)
@@ -15,8 +16,8 @@ def gspath(uid):  # noqa: F811
 
 
 def test_gspath_patched(gspath):
-    """Test that the GSPath class is patched"""
-    assert isinstance(gspath, GSPath)
+    """Test that the AnyPath class is patched"""
+    assert isinstance(gspath, AnyPath)
 
 
 def test_mkdir(gspath):
@@ -50,9 +51,9 @@ def test_mkdir_parents_false(gspath):
 
 
 def test_eq():
-    """Test that GSPath objects are equal even if one has a trailing slash"""
-    gspath1 = GSPath("gs://handy-buffer-287000.appspot.com/yunpath-test")
-    gspath2 = GSPath("gs://handy-buffer-287000.appspot.com/yunpath-test/")
+    """Test that AnyPath objects are equal even if one has a trailing slash"""
+    gspath1 = AnyPath("gs://handy-buffer-287000.appspot.com/yunpath-test")
+    gspath2 = AnyPath("gs://handy-buffer-287000.appspot.com/yunpath-test/")
     assert gspath1 == gspath2
     assert gspath1 != 1
 
@@ -87,3 +88,17 @@ def test_is_file_or_dir(gspath):
     path = gspath / "test_is_file_or_dir"
     path.mkdir(exist_ok=True)
     assert path.client._is_file_or_dir(path) == "dir"
+
+
+def test_rmtree(tmp_path):
+    # Create a directory for testing
+    test_dir = AnyPath(tmp_path) / "test_dir"
+    test_dir.mkdir(exist_ok=True)
+    test_file = test_dir / "test_file"
+    test_file.touch()
+
+    with pytest.raises(NotADirectoryError):
+        test_file.rmtree()
+
+    test_dir.rmtree()
+    assert not test_dir.exists()
