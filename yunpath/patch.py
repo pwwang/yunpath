@@ -70,7 +70,7 @@ class GSPath(_GSPath):
             return False
         if str(self) == str(other):
             return True
-        if self.is_dir() and str(self) == str(other).rstrip("/"):  # marked
+        if str(self) == str(other).rstrip("/") and self.is_dir():  # marked
             return True
         return False
 
