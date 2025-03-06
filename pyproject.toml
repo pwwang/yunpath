@@ -8,13 +8,13 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.9"
-cloudpathlib = "^0.20.0"
+cloudpathlib = "^0.21"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.4"
 pytest-cov = "^6.0.0"
 python-dotenv = "^1.0.1"
-google-cloud-storage = "^3.0.0"
+google-cloud-storage = "^3"
 
 [build-system]
 requires = ["poetry-core"]
