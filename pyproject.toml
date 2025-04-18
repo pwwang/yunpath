@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "yunpath"
-version = "0.0.3"
+version = "0.0.4"
 description = "Monkey patch cloudpathlib to fix issues or add features"
 authors = ["pwwang <pwwang@pwwang.com>"]
 license = "MIT"
