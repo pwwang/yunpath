@@ -38,18 +38,16 @@ def _copy(
     if isinstance(destination, (str, os.PathLike)):
         destination = to_anypath(destination)
 
+    if destination.is_dir():
+        destination = destination / self.name
+
     if not isinstance(destination, CloudPath):
-        return shutil.copy2(self, destination)
+        return shutil.copyfile(self, destination)
 
     else:
-        if not destination.exists() or destination.is_file():
-            return destination.upload_from(
-                self, force_overwrite_to_cloud=force_overwrite_to_cloud
-            )
-        else:
-            return (destination / self.name).upload_from(
-                self, force_overwrite_to_cloud=force_overwrite_to_cloud
-            )
+        return destination.upload_from(
+            self, force_overwrite_to_cloud=force_overwrite_to_cloud
+        )
 
 
 def _copytree(
