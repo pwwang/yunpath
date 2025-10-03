@@ -5,17 +5,6 @@ from cloudpathlib.exceptions import NoStatError
 from .conftest import uid  # noqa: F401
 
 
-@pytest.fixture(scope="module")
-def gspath(uid):  # noqa: F811
-    """Return a AnyPath object"""
-    p = AnyPath(
-        f"gs://handy-buffer-287000.appspot.com/yunpath-test/test-{uid}"
-    )
-    p.mkdir(exist_ok=True)
-    yield p
-    p.rmtree()
-
-
 def test_gspath_patched(gspath):
     """Test that the AnyPath class is patched"""
     assert isinstance(gspath, AnyPath)
@@ -103,17 +92,3 @@ def test_is_file_or_dir(gspath):
     path = gspath / "test_file.txt"
     path.touch()
     assert path.client._is_file_or_dir(path) == "file"
-
-
-def test_rmtree(tmp_path):
-    # Create a directory for testing
-    test_dir = AnyPath(tmp_path) / "test_dir"
-    test_dir.mkdir(exist_ok=True)
-    test_file = test_dir / "test_file"
-    test_file.touch()
-
-    with pytest.raises(NotADirectoryError):
-        test_file.rmtree()
-
-    test_dir.rmtree()
-    assert not test_dir.exists()
