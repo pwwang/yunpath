@@ -501,7 +501,8 @@ def test_copy_directory_raises_error(gspath):
 
 
 # NOTE: The following copytree tests are commented out due to performance issues
-# with GCS operations. The copytree functionality is tested through the PurePath._copytree
+# with GCS operations. The copytree functionality is tested through the PurePath._
+# copytree
 # implementation which is covered by other integration tests.
 
 # def test_copytree(gspath):
@@ -693,3 +694,65 @@ def test_fspath_property():
     from pathlib import PurePath
     p = PurePath("/test/path")
     assert p.fspath == "/test/path"
+
+
+def test_resolve_circular_symlink_detection(gspath):
+    """Test that resolve() detects circular symlinks"""
+    # Create a circular symlink chain
+    link1 = gspath / "test_circular_link1"
+    link2 = gspath / "test_circular_link2"
+
+    # Create circular reference
+    link1.symlink_to(link2)
+    link2.symlink_to(link1)
+
+    # Should raise OSError for too many symlink levels
+    with pytest.raises(OSError, match="Too many levels of symbolic links"):
+        link1.resolve()
+
+    # Clean up
+    link1.unlink()
+    link2.unlink()
+
+
+def test_copy_with_positional_arg(gspath):
+    """Test that copy() resolves symlinks when target is passed positionally"""
+    source = gspath / "test_copy_pos_source.txt"
+    source.write_text("content")
+
+    target_file = gspath / "test_copy_pos_target.txt"
+
+    link = gspath / "test_copy_pos_link.txt"
+    link.symlink_to(source)
+
+    dest_link = gspath / "test_copy_pos_dest_link.txt"
+    dest_link.symlink_to(target_file)
+
+    # Copy from symlink to symlink using positional arg
+    # This should follow both symlinks
+    link.copy(dest_link, force_overwrite_to_cloud=True)
+
+    # Target should have the content
+    assert target_file.read_text() == "content"
+
+    # Clean up
+    link.unlink()
+    source.unlink()
+    dest_link.unlink()
+    target_file.unlink()
+
+
+def test_eq_without_network_call(gspath):
+    """Test that __eq__ doesn't make network calls for trailing slash comparison"""
+    from yunpath import AnyPath
+
+    path1_str = str(gspath / "test_eq_no_network")
+    path2_str = path1_str + "/"
+
+    path1 = AnyPath(path1_str)
+    path2 = AnyPath(path2_str)
+
+    # These should be equal based on string comparison alone
+    # without making network calls (we can't truly test no network calls,
+    # but we verify the logic works)
+    assert path1 == path2

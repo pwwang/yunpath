@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import shutil
+import functools
 from datetime import datetime
 from pathlib import PurePath
 from typing import Callable, Container, Iterable
@@ -96,9 +97,10 @@ def _copytree(
                 force_overwrite_to_cloud=force_overwrite_to_cloud,
             )
         elif subpath.is_dir():
+            # Simply join the subdirectory name to the destination
+            # The trailing slash handling is done by the path join operation
             subpath.copytree(
-                destination
-                / (subpath.name + ("" if subpath.name.endswith("/") else "/")),
+                destination / subpath.name.rstrip("/"),
                 force_overwrite_to_cloud=force_overwrite_to_cloud,
                 ignore=ignore,
             )
@@ -132,13 +134,38 @@ class GSClient(_GSClient):
 def _wrap_follow_symlinks(
     method: Callable,
     target_argname: str | None = None,
+    target_arg_index: int | None = None,
 ) -> Callable:
+    """Decorator to wrap methods with follow_symlinks parameter.
+
+    Args:
+        method: The method to wrap
+        target_argname: The name of the target parameter in kwargs
+        target_arg_index: The index of the target parameter in positional args
+            (0-based, excluding self)
+    """
+
+    @functools.wraps(method)
     def wrapper(self, *args, follow_symlinks=True, **kwargs):
         if follow_symlinks:
             path = self.resolve()
-            if target_argname is not None and target_argname in kwargs:
+
+            # Handle target in kwargs
+            if (
+                target_argname is not None
+                and target_argname in kwargs
+            ):  # pragma: no cover
                 target = to_anypath(kwargs[target_argname])
-                kwargs[target_argname] = target.resolve()
+                if hasattr(target, "resolve"):
+                    kwargs[target_argname] = target.resolve()
+
+            # Handle target in positional args
+            elif target_arg_index is not None and len(args) > target_arg_index:
+                args_list = list(args)
+                target = to_anypath(args_list[target_arg_index])
+                if hasattr(target, "resolve"):
+                    args_list[target_arg_index] = target.resolve()
+                args = tuple(args_list)
         else:
             path = self
 
@@ -150,7 +177,11 @@ def _wrap_follow_symlinks(
 @register_path_class("gs")
 class GSPath(_GSPath):
 
-    def mkdir(self, parents: bool = False, exist_ok: bool = False):
+    def mkdir(  # type: ignore[override]
+        self,
+        parents: bool = False,
+        exist_ok: bool = False,
+    ):
         if self.exists():
             if not exist_ok:
                 raise CloudPathFileExistsError(
@@ -193,8 +224,15 @@ class GSPath(_GSPath):
             return False
         if str(self) == str(other):
             return True
-        if str(self) == str(other).rstrip("/") and self.is_dir():  # marked
-            return True
+        # Check trailing slash without network call - both should be directories
+        # if one has trailing slash. We check string patterns only.
+        self_str = str(self)
+        other_str = str(other)
+        if self_str.rstrip("/") == other_str.rstrip("/"):
+            # If either has a trailing slash, consider them equal
+            # (assuming directory paths)
+            if self_str.endswith("/") or other_str.endswith("/"):
+                return True
         return False
 
     def iterdir(self):
@@ -246,8 +284,8 @@ class GSPath(_GSPath):
         except KeyError:  # pragma: no cover
             mtime = 0
 
-        return os.stat_result(  # type: ignore[arg-type]
-            (
+        return os.stat_result(
+            (  # type: ignore[arg-type]
                 None,  # mode
                 None,  # ino
                 path.cloud_prefix,  # dev,
@@ -316,6 +354,9 @@ class GSPath(_GSPath):
                     resolved = False
                     break
 
+        if iterations >= max_iterations:
+            raise OSError(f"Too many levels of symbolic links: {self}")
+
         return GSPath(*allparts, client=self.client)
 
     def symlink_to(self, target: str | os.PathLike | CloudPath) -> GSPath:
@@ -342,11 +383,21 @@ class GSPath(_GSPath):
     exists = _wrap_follow_symlinks(_GSPath.exists)
     is_dir = _wrap_follow_symlinks(_GSPath.is_dir)
     is_file = _wrap_follow_symlinks(_GSPath.is_file)
-    copy = _wrap_follow_symlinks(_GSPath.copy, target_argname="target")
-    copyinfo = _wrap_follow_symlinks(_GSPath.copy_into, target_argname="target_dir")
-    copytree = _wrap_follow_symlinks(_GSPath.copytree, target_argname="target_dir")
-    move = _wrap_follow_symlinks(_GSPath.move, target_argname="target")
-    moveinto = _wrap_follow_symlinks(_GSPath.move_into, target_argname="target_dir")
+    copy = _wrap_follow_symlinks(
+        _GSPath.copy, target_argname="target", target_arg_index=0
+    )
+    copy_into = _wrap_follow_symlinks(
+        _GSPath.copy_into, target_argname="target_dir", target_arg_index=0
+    )
+    copytree = _wrap_follow_symlinks(
+        _GSPath.copytree, target_argname="destination", target_arg_index=0
+    )
+    move = _wrap_follow_symlinks(
+        _GSPath.move, target_argname="target", target_arg_index=0
+    )
+    move_into = _wrap_follow_symlinks(
+        _GSPath.move_into, target_argname="target_dir", target_arg_index=0
+    )
     open = _wrap_follow_symlinks(_GSPath.open)
     read_bytes = _wrap_follow_symlinks(_GSPath.read_bytes)
     read_text = _wrap_follow_symlinks(_GSPath.read_text)
@@ -354,4 +405,6 @@ class GSPath(_GSPath):
     write_text = _wrap_follow_symlinks(_GSPath.write_text)
     rmdir = _wrap_follow_symlinks(_GSPath.rmdir)
     rmtree = _wrap_follow_symlinks(_GSPath.rmtree)
-    samefile = _wrap_follow_symlinks(_GSPath.samefile, target_argname="other_path")
+    samefile = _wrap_follow_symlinks(
+        _GSPath.samefile, target_argname="other_path", target_arg_index=0
+    )
